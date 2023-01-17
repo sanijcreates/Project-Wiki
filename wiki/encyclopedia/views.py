@@ -8,7 +8,7 @@ import random
 
 class NewPageForm(forms.Form):
     title = forms.CharField(label = "Title")
-    content = forms.CharField(label = "Content")
+    content = forms.CharField(widget=forms.Textarea)
 
 def index(request):
     return render(request, "encyclopedia/index.html", {
@@ -27,30 +27,30 @@ def entry(request, title):
             "title" : title,
             "content": content
         })
-  
+
 def search(request):
     if request.method == "POST":
-        entry_search = request.POST['q']
-        get_title = util.get_entry(entry_search)
-        if(get_title == None):
+        title = request.POST['q']
+        content = util.get_entry(title)
+        if(content == None):
             list = util.list_entries()
             updated_list = []
             for el in list:
-                if entry_search.lower() in el.lower():
+                if title.lower() in el.lower():
                     updated_list.append(el)
             return render(request, "encyclopedia/search.html", {
                 "updated_list": updated_list
         })
         else:
-            get_title = markdown2.markdown(get_title)
+            content = markdown2.markdown(content)
             return render(request, "encyclopedia/entry.html", {
-                "getTitle": get_title
+                "title":title,
+                "content": content
             })
     else:
         return render(request, "encyclopedia/layout.html")
 
 def newpage(request):
-    entries = util.list_entries()
     if (request.method == "POST"):
         form = NewPageForm(request.POST)
         data = request.POST
@@ -59,32 +59,34 @@ def newpage(request):
                 "error": "The title you entered already exists"
             })
         util.save_entry(data['title'], data['content'])
-        return HttpResponseRedirect(reverse("entry"), {
-            "getTitle": util.get_entry(data['title'])
+        content = markdown2.markdown(data['content'])
+        return render(request, 'encyclopedia/entry.html', {
+            "title" : data['title'],
+            "content" : content
         })
     return render(request, "encyclopedia/newpage.html", {
         "form": NewPageForm()
     })
 
 def editpage(request):
-    if request.method == "POST":
+    if request.method == "POST":       
         title = request.POST['entry_title']
-        content = util.get_entry(title)
+        content = util.get_entry(title)             
         return render(request, "encyclopedia/editpage.html", {
-            "title": title,
-            "content": content
-        })
-    return render(request, "encyclopedia/editpage.html")
-
-def save_page(request):
-    if request.method == "POST":
-        title = request.POST['title']
-        content = request.POST['content']
-        util.save_entry(title , content)
-        content =  util.get_entry(title)
-        content = markdown2.markdown(content)
+            "title": title,                         
+            "content": content                      
+        })                                      
+    return render(request, "encyclopedia/editpage.html")            
+                                        
+def save_page(request):                             
+    if request.method == "POST":                    
+        title = request.POST['title']               
+        content = request.POST['content']           
+        util.save_entry(title , content)            
+        content =  util.get_entry(title)                        
+        content = markdown2.markdown(content)               
         return render(request, "encyclopedia/entry.html", {
-            "title" : title,
+            "title" : title,                         
             "content": content
         })
 
@@ -92,11 +94,11 @@ def random_page(request):
     all_title = util.list_entries()
     length = len(all_title)
     random_number = random.randint(0, length - 1)
-    title = all_title[random_number]
-    content = util.get_entry(title)
+    title = all_title[random_number]    
+    content = util.get_entry(title)      
     content = markdown2.markdown(content)
 
     return render(request, "encyclopedia/entry.html", {
-        "title" : title, 
-        "content" : content
-    })
+        "title" : title,                
+        "content" : content             
+    })                                  
